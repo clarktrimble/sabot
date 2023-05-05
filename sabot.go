@@ -72,9 +72,6 @@ func GetFields(ctx context.Context) Fields {
 
 func (sabot *Sabot) log(ctx context.Context, level, msg string, kv []any) {
 
-	// Todo: redaction
-	// Todo: truncation
-
 	ctxFields := GetFields(ctx)
 	kvFields := newFields(kv)
 

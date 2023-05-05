@@ -279,11 +279,6 @@ var _ = Describe("Sabot", func() {
 					})
 				})
 
-				// Todo: test writer error no alt
-				// Todo: spruce redact
-				// Todo: examples main
-				// Todo: run unit tests in gh
-
 				When("writer returns error and alternate writer defined", func() {
 					var altBuf *bytes.Buffer
 
