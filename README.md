@@ -28,7 +28,7 @@ preceeded the above calls, then the `request_id` can be included!  This can be v
 
 ## Structured Output
 
-Json is implemented here and I'm interested in adding a lightweight to OpenTelemetry.
+Json is implemented here and I'm interested in adding lightweight OpenTelemetry.
 
 ## Best Effort
 

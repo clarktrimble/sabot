@@ -23,12 +23,6 @@ type Sabot struct {
 	AltWriter io.Writer
 }
 
-type logger interface {
-	Info(ctx context.Context, msg string, kv ...any)
-	Error(ctx context.Context, msg string, err error, kv ...any)
-	WithFields(ctx context.Context, kv ...any) context.Context
-}
-
 // Info logs info level events
 func (sabot *Sabot) Info(ctx context.Context, msg string, kv ...any) {
 
