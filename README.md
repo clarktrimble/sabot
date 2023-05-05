@@ -1,7 +1,9 @@
 
 # Sabot
 
-Structured Logging for your Golang
+Contextual Logging for your Golang
+
+<img width="775" alt="sabot" src="https://user-images.githubusercontent.com/5055161/236523441-cebbcbb7-77ff-4a33-aa1f-464a6f951123.png">
 
 ## Why?
 
