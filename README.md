@@ -3,7 +3,7 @@
 
 Contextual Logging for your Golang
 
-<img width="775" alt="sabot" src="https://user-images.githubusercontent.com/5055161/236523441-cebbcbb7-77ff-4a33-aa1f-464a6f951123.png">
+![sabot-sketch-small](https://user-images.githubusercontent.com/5055161/236526017-ab7fa549-2230-4088-a22e-aee58f586af7.png)
 
 ## Why?
 
@@ -55,6 +55,7 @@ A reasonable interface might look like:
 Opinions vary widely, and:
 
 <https://opentelemetry.io/docs/reference/specification/logs/data-model/#displaying-severity>
+
 <https://dave.cheney.net/2015/11/05/lets-talk-about-logging>
 
 offer some interesting perspectives.  A pull request for Debug will be most welcome!
