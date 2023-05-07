@@ -73,10 +73,10 @@ var _ = Describe("Sabot", func() {
 				})
 
 				It("should return logerror", func() {
-					redact(&fields)
+					replace(fields)
 					Expect(fields).To(Equal(Fields{
 						"logerror": "cannot create fields from odd count",
-						"keyvals":  "keyvals redacted for test",
+						"keyvals":  "keyvals replaced for test",
 					}))
 				})
 			})
@@ -111,6 +111,7 @@ var _ = Describe("Sabot", func() {
 				msg = "a noteworthy occurrence"
 				err = nil
 				kv = nil
+				MaxLen = 0
 			})
 
 			Context("at error level", func() {
@@ -197,6 +198,22 @@ var _ = Describe("Sabot", func() {
 					})
 				})
 
+				When("no ctx fields and object val in kv larger than max", func() {
+					BeforeEach(func() {
+						kv = []any{"foo", []string{"bar", "bar", "bar", "bar", "bar", "baaaaaarrrrr"}}
+						MaxLen = 9
+					})
+
+					It("should write the message, level, ts, and marshalled object", func() {
+						Expect(delog(buf)).To(Equal(Fields{
+							"level": "info",
+							"msg":   "a noteworthy occurrence",
+							"ts":    "nowish",
+							"foo":   `["bar","b--data--truncated--at--9--`,
+						}))
+					})
+				})
+
 				When("ctx fields and kv fields", func() {
 					BeforeEach(func() {
 						ctx = WithFields(ctx, "app_id", "testo")
@@ -241,7 +258,7 @@ var _ = Describe("Sabot", func() {
 							"level":    "info",
 							"msg":      "a noteworthy occurrence",
 							"ts":       "nowish",
-							"keyvals":  "keyvals redacted for test",
+							"keyvals":  "keyvals replaced for test",
 							"logerror": "cannot create fields from odd count",
 						}))
 					})
@@ -258,7 +275,7 @@ var _ = Describe("Sabot", func() {
 							"msg":      "a noteworthy occurrence",
 							"ts":       "nowish",
 							"logerror": "non-string field key: 88",
-							"keyvals":  "keyvals redacted for test",
+							"keyvals":  "keyvals replaced for test",
 						}))
 					})
 				})
@@ -273,7 +290,7 @@ var _ = Describe("Sabot", func() {
 							"level":    "info",
 							"msg":      "a noteworthy occurrence",
 							"ts":       "nowish",
-							"keyvals":  "keyvals redacted for test",
+							"keyvals":  "keyvals replaced for test",
 							"logerror": "json: unsupported type: chan int",
 						}))
 					})
@@ -314,20 +331,20 @@ func delog(buf *bytes.Buffer) (logged Fields) {
 	Expect(loggedAt).To(BeTemporally("~", time.Now(), 9*time.Millisecond))
 	logged["ts"] = "nowish"
 
-	redact(&logged)
+	replace(logged)
 	return
 }
 
-func redact(asdf *Fields) {
+func replace(logged Fields) {
 
-	logged := *asdf
 	logerror, ok := logged["logerror"]
 	if ok {
 		logged["logerror"] = strings.Split(logerror.(string), "\n")[0]
 	}
+
 	logerror, ok = logged["keyvals"]
 	if ok {
-		logged["keyvals"] = "keyvals redacted for test"
+		logged["keyvals"] = "keyvals replaced for test"
 	}
 }
 

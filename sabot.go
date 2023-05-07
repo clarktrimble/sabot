@@ -11,6 +11,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	// MaxLen is the length around which field values are truncated
+	MaxLen int
+)
+
 // Fields are key value pairs
 type Fields map[string]any
 
@@ -153,7 +158,7 @@ func marshalUnknown(obj any) (any, error) {
 			err = errors.Wrapf(err, "failed to marshal: %#v", obj)
 			return logErrorKey, err
 		}
-		return string(data), nil
+		return string(trunc(data)), nil
 	}
 }
 
@@ -165,4 +170,14 @@ func copyFields(ctx context.Context) Fields {
 	}
 
 	return cp
+}
+
+func trunc(data []byte) []byte {
+
+	if MaxLen > 0 && MaxLen < len(data) {
+		notice := fmt.Sprintf("--data--truncated--at--%d--", MaxLen)
+		data = append(data[:MaxLen], []byte(notice)...)
+	}
+
+	return data
 }
