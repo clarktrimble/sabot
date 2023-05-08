@@ -18,13 +18,16 @@ or
 
     lgr.Error(ctx, "request logger failed to get body", err)
 
+After positional, any additional parameters are interpreted as key-value pairs to be included in the message.
+The approach works well in practice and logging statements can contribute to more readable code!
+
 ## Virtues of Contextual Logging
 
 It's nice to use context for .. ah, the context of the log message.  For example, if:
 
     ctx = logger.WithFields(ctx, "request_id", rg.String(7))
 
-preceeded the above calls, then the `request_id` can be included!  This can be very handy indeed when the time comes to pivot in Kibana, etc.
+preceded the above calls, then the `request_id` can be included!  This can be very handy indeed when the time comes to pivot in Kibana, etc.
 
 ## Structured Output
 
@@ -33,6 +36,13 @@ Json is implemented here and I'm interested in adding lightweight OpenTelemetry.
 ## Best Effort
 
 You don't want to tell your boss that the customer had an outage because of a logging issue.
+
+### Truncation
+
+Logging request bodies as seen above can be very helpful, especially when troubleshooting a system that's just coming together.
+Simply truncating when things get out of hand strikes a nice balance:
+
+    "foo":   `["bar","bar","bar","bar","bar",--truncated--`,
 
 ## Unoptimized
 
@@ -66,7 +76,7 @@ Logging what you need when you're troubleshooting in prod may take a few passes.
 I feel well at home in the Golang community, but I might be a touch rouge with:
 
   - multi-char variable names
-  - named return params
+  - named return parameters
   - BDD/DSL testing
 
 In the name of readability, which of course, tends towards the subjective.

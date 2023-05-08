@@ -26,16 +26,20 @@ var _ = Describe("Sabot", func() {
 		var (
 			ctx    context.Context
 			fields Fields
+			lgr    Sabot
 		)
 
 		BeforeEach(func() {
 			ctx = context.Background()
+			lgr = Sabot{
+				MaxLen: 0,
+			}
 		})
 
 		Context("in a ctx", func() {
 
 			JustBeforeEach(func() {
-				fields = GetFields(ctx)
+				fields = lgr.GetFields(ctx)
 			})
 
 			When("nothing in ctx", func() {
@@ -46,7 +50,7 @@ var _ = Describe("Sabot", func() {
 
 			When("something stored in ctx", func() {
 				BeforeEach(func() {
-					ctx = WithFields(ctx, "foo", "bar")
+					ctx = lgr.WithFields(ctx, "foo", "bar")
 				})
 
 				It("should return something", func() {
@@ -55,7 +59,7 @@ var _ = Describe("Sabot", func() {
 
 				When("another thing is added to the same ctx", func() {
 					BeforeEach(func() {
-						ctx = WithFields(ctx, "another", "thing")
+						ctx = lgr.WithFields(ctx, "another", "thing")
 					})
 
 					It("should return both", func() {
@@ -69,7 +73,7 @@ var _ = Describe("Sabot", func() {
 
 			When("odd count stored in ctx", func() {
 				BeforeEach(func() {
-					ctx = WithFields(ctx, "foo", "bar", "odd")
+					ctx = lgr.WithFields(ctx, "foo", "bar", "odd")
 				})
 
 				It("should return logerror", func() {
@@ -106,12 +110,12 @@ var _ = Describe("Sabot", func() {
 				buf = &bytes.Buffer{}
 				lgr = Sabot{
 					Writer: buf,
+					MaxLen: 0,
 				}
 				ctx = context.Background()
 				msg = "a noteworthy occurrence"
 				err = nil
 				kv = nil
-				MaxLen = 0
 			})
 
 			Context("at error level", func() {
@@ -153,7 +157,7 @@ var _ = Describe("Sabot", func() {
 
 				When("ctx fields and no kv fields", func() {
 					BeforeEach(func() {
-						ctx = WithFields(ctx, "app_id", "testo", "app_grp", "global")
+						ctx = lgr.WithFields(ctx, "app_id", "testo", "app_grp", "global")
 					})
 
 					It("should write the message, level, ts, and fields", func() {
@@ -201,22 +205,25 @@ var _ = Describe("Sabot", func() {
 				When("no ctx fields and object val in kv larger than max", func() {
 					BeforeEach(func() {
 						kv = []any{"foo", []string{"bar", "bar", "bar", "bar", "bar", "baaaaaarrrrr"}}
-						MaxLen = 9
+						lgr.MaxLen = 44
 					})
 
-					It("should write the message, level, ts, and marshalled object", func() {
-						Expect(delog(buf)).To(Equal(Fields{
+					It("should write the message, level, ts, and truncated object", func() {
+						lgd := delog(buf)
+
+						Expect(lgd["foo"]).To(HaveLen(44))
+						Expect(lgd).To(Equal(Fields{
 							"level": "info",
 							"msg":   "a noteworthy occurrence",
 							"ts":    "nowish",
-							"foo":   `["bar","b--data--truncated--at--9--`,
+							"foo":   `["bar","bar","bar","bar","bar",--truncated--`,
 						}))
 					})
 				})
 
 				When("ctx fields and kv fields", func() {
 					BeforeEach(func() {
-						ctx = WithFields(ctx, "app_id", "testo")
+						ctx = lgr.WithFields(ctx, "app_id", "testo")
 						kv = []any{"foo", "bar"}
 					})
 
@@ -233,7 +240,7 @@ var _ = Describe("Sabot", func() {
 
 				When("ctx fields and kv fields overlap each other and boilerplate", func() {
 					BeforeEach(func() {
-						ctx = WithFields(ctx, "app_id", "testo", "level", "warn21")
+						ctx = lgr.WithFields(ctx, "app_id", "testo", "level", "warn21")
 						kv = []any{"foo", "bar", "app_id", "producto", "level", "warn22"}
 					})
 

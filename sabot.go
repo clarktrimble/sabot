@@ -6,14 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
-)
-
-var (
-	// MaxLen is the length around which field values are truncated
-	MaxLen int
 )
 
 // Fields are key value pairs
@@ -24,8 +20,12 @@ type LogKey struct{}
 
 // Sabot is a structured logger
 type Sabot struct {
-	Writer    io.Writer
+	// Writer is where output is written
+	Writer io.Writer
+	// AltWriter is where output is written when Writer.Write returns an error
 	AltWriter io.Writer
+	// MaxLen is the length at which string field values are truncated
+	MaxLen int
 }
 
 // Info logs info level events
@@ -42,20 +42,74 @@ func (sabot *Sabot) Error(ctx context.Context, msg string, err error, kv ...any)
 }
 
 // WithFields adds log fields to a given context
-func WithFields(ctx context.Context, kv ...any) context.Context {
+func (sabot *Sabot) WithFields(ctx context.Context, kv ...any) context.Context {
 
-	ctxFields := copyFields(ctx)
-	kvFields := newFields(kv)
-
-	for key, val := range kvFields {
-		ctxFields[key] = val
-	}
-
-	return context.WithValue(ctx, LogKey{}, ctxFields)
+	return withFields(ctx, kv)
 }
 
 // GetFields gets log fields from a given context
-func GetFields(ctx context.Context) Fields {
+func (sabot *Sabot) GetFields(ctx context.Context) Fields {
+
+	return getFields(ctx)
+}
+
+//
+// unexported
+//
+
+const (
+	logErrorKey      string = "logerror"
+	truncationNotice string = "--truncated--"
+)
+
+func (sabot *Sabot) log(ctx context.Context, level, msg string, kv []any) {
+
+	ctxFields := sabot.GetFields(ctx)
+	fields := newFields(kv)
+
+	// silently overwrite kv from ctx and boilerplate when duplicate key
+
+	for key, val := range ctxFields {
+		fields[key] = val
+	}
+
+	fields["msg"] = msg
+	fields["level"] = level
+	fields["ts"] = time.Now()
+
+	fields.truncate(sabot.MaxLen)
+
+	// marshal and try to emit something in case of trouble
+
+	data, err := json.Marshal(fields)
+	if err != nil {
+		// hard to trigger since newFields returns valid
+		err = errors.Wrapf(err, "failed to marshal log message")
+		data = []byte(fmt.Sprintf(`{"%s": "%+v", "msg": "%#v"}`, logErrorKey, err, fields))
+	}
+
+	_, err = sabot.Writer.Write(append(data, []byte("\n")...))
+	if err != nil && sabot.AltWriter != nil {
+		err = errors.Wrapf(err, "failed to write")
+		_, _ = fmt.Fprintf(sabot.AltWriter, "%s: %+v with fields %#v\n", logErrorKey, err, fields)
+	}
+}
+
+func withFields(ctx context.Context, kv []any) context.Context {
+
+	fields := copyFields(ctx)
+	kvFields := newFields(kv)
+
+	// silently overwrite ctx from kv when duplicate key
+
+	for key, val := range kvFields {
+		fields[key] = val
+	}
+
+	return context.WithValue(ctx, LogKey{}, fields)
+}
+
+func getFields(ctx context.Context) Fields {
 
 	val := ctx.Value(LogKey{})
 	if val == nil {
@@ -71,45 +125,6 @@ func GetFields(ctx context.Context) Fields {
 	return fields
 }
 
-//
-// unexported
-//
-
-func (sabot *Sabot) log(ctx context.Context, level, msg string, kv []any) {
-
-	ctxFields := GetFields(ctx)
-	kvFields := newFields(kv)
-
-	// silently overwrite kv from ctx and boilerplate when duplicate key
-
-	for key, val := range ctxFields {
-		kvFields[key] = val
-	}
-
-	kvFields["msg"] = msg
-	kvFields["level"] = level
-	kvFields["ts"] = time.Now()
-
-	// marshal and try to emit something in case of trouble
-
-	data, err := json.Marshal(kvFields)
-	if err != nil {
-		// hard to trigger since newFields returns valid
-		err = errors.Wrapf(err, "failed to marshal log message")
-		data = []byte(fmt.Sprintf(`{"%s": "%+v", "msg": "%#v"}`, logErrorKey, err, kvFields))
-	}
-
-	_, err = sabot.Writer.Write(append(data, []byte("\n")...))
-	if err != nil && sabot.AltWriter != nil {
-		err = errors.Wrapf(err, "failed to write")
-		_, _ = fmt.Fprintf(sabot.AltWriter, "%s: %+v with fields %#v\n", logErrorKey, err, kvFields)
-	}
-}
-
-const (
-	logErrorKey string = "logerror"
-)
-
 func logErrorFields(err error, kv []any) Fields {
 
 	return Fields{
@@ -124,6 +139,8 @@ func newFields(kv []any) Fields {
 		err := errors.Errorf("cannot create fields from odd count")
 		return logErrorFields(err, kv)
 	}
+
+	// interpret elements of slice as key-value pairs
 
 	fields := Fields{}
 	for i := 0; i < len(kv); i += 2 {
@@ -158,26 +175,32 @@ func marshalUnknown(obj any) (any, error) {
 			err = errors.Wrapf(err, "failed to marshal: %#v", obj)
 			return logErrorKey, err
 		}
-		return string(trunc(data)), nil
+		return string(data), nil
 	}
 }
 
 func copyFields(ctx context.Context) Fields {
 
 	cp := Fields{}
-	for key, value := range GetFields(ctx) {
+	for key, value := range getFields(ctx) {
 		cp[key] = value
 	}
 
 	return cp
 }
 
-func trunc(data []byte) []byte {
+func (fields Fields) truncate(max int) {
 
-	if MaxLen > 0 && MaxLen < len(data) {
-		notice := fmt.Sprintf("--data--truncated--at--%d--", MaxLen)
-		data = append(data[:MaxLen], []byte(notice)...)
+	max -= len(truncationNotice)
+	if max < 1 {
+		return
 	}
 
-	return data
+	for key, val := range fields {
+
+		str, ok := val.(string)
+		if ok && max < len(str) {
+			fields[key] = strings.Join([]string{str[:max], truncationNotice}, "")
+		}
+	}
 }
