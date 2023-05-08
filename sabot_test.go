@@ -26,16 +26,20 @@ var _ = Describe("Sabot", func() {
 		var (
 			ctx    context.Context
 			fields Fields
+			lgr    Sabot
 		)
 
 		BeforeEach(func() {
 			ctx = context.Background()
+			lgr = Sabot{
+				MaxLen: 0,
+			}
 		})
 
 		Context("in a ctx", func() {
 
 			JustBeforeEach(func() {
-				fields = GetFields(ctx)
+				fields = lgr.GetFields(ctx)
 			})
 
 			When("nothing in ctx", func() {
@@ -46,7 +50,7 @@ var _ = Describe("Sabot", func() {
 
 			When("something stored in ctx", func() {
 				BeforeEach(func() {
-					ctx = WithFields(ctx, "foo", "bar")
+					ctx = lgr.WithFields(ctx, "foo", "bar")
 				})
 
 				It("should return something", func() {
@@ -55,7 +59,7 @@ var _ = Describe("Sabot", func() {
 
 				When("another thing is added to the same ctx", func() {
 					BeforeEach(func() {
-						ctx = WithFields(ctx, "another", "thing")
+						ctx = lgr.WithFields(ctx, "another", "thing")
 					})
 
 					It("should return both", func() {
@@ -69,14 +73,14 @@ var _ = Describe("Sabot", func() {
 
 			When("odd count stored in ctx", func() {
 				BeforeEach(func() {
-					ctx = WithFields(ctx, "foo", "bar", "odd")
+					ctx = lgr.WithFields(ctx, "foo", "bar", "odd")
 				})
 
 				It("should return logerror", func() {
-					redact(&fields)
+					replace(fields)
 					Expect(fields).To(Equal(Fields{
 						"logerror": "cannot create fields from odd count",
-						"keyvals":  "keyvals redacted for test",
+						"keyvals":  "keyvals replaced for test",
 					}))
 				})
 			})
@@ -106,6 +110,7 @@ var _ = Describe("Sabot", func() {
 				buf = &bytes.Buffer{}
 				lgr = Sabot{
 					Writer: buf,
+					MaxLen: 0,
 				}
 				ctx = context.Background()
 				msg = "a noteworthy occurrence"
@@ -152,7 +157,7 @@ var _ = Describe("Sabot", func() {
 
 				When("ctx fields and no kv fields", func() {
 					BeforeEach(func() {
-						ctx = WithFields(ctx, "app_id", "testo", "app_grp", "global")
+						ctx = lgr.WithFields(ctx, "app_id", "testo", "app_grp", "global")
 					})
 
 					It("should write the message, level, ts, and fields", func() {
@@ -197,9 +202,28 @@ var _ = Describe("Sabot", func() {
 					})
 				})
 
+				When("no ctx fields and object val in kv larger than max", func() {
+					BeforeEach(func() {
+						kv = []any{"foo", []string{"bar", "bar", "bar", "bar", "bar", "baaaaaarrrrr"}}
+						lgr.MaxLen = 44
+					})
+
+					It("should write the message, level, ts, and truncated object", func() {
+						lgd := delog(buf)
+
+						Expect(lgd["foo"]).To(HaveLen(44))
+						Expect(lgd).To(Equal(Fields{
+							"level": "info",
+							"msg":   "a noteworthy occurrence",
+							"ts":    "nowish",
+							"foo":   `["bar","bar","bar","bar","bar",--truncated--`,
+						}))
+					})
+				})
+
 				When("ctx fields and kv fields", func() {
 					BeforeEach(func() {
-						ctx = WithFields(ctx, "app_id", "testo")
+						ctx = lgr.WithFields(ctx, "app_id", "testo")
 						kv = []any{"foo", "bar"}
 					})
 
@@ -216,7 +240,7 @@ var _ = Describe("Sabot", func() {
 
 				When("ctx fields and kv fields overlap each other and boilerplate", func() {
 					BeforeEach(func() {
-						ctx = WithFields(ctx, "app_id", "testo", "level", "warn21")
+						ctx = lgr.WithFields(ctx, "app_id", "testo", "level", "warn21")
 						kv = []any{"foo", "bar", "app_id", "producto", "level", "warn22"}
 					})
 
@@ -241,7 +265,7 @@ var _ = Describe("Sabot", func() {
 							"level":    "info",
 							"msg":      "a noteworthy occurrence",
 							"ts":       "nowish",
-							"keyvals":  "keyvals redacted for test",
+							"keyvals":  "keyvals replaced for test",
 							"logerror": "cannot create fields from odd count",
 						}))
 					})
@@ -258,7 +282,7 @@ var _ = Describe("Sabot", func() {
 							"msg":      "a noteworthy occurrence",
 							"ts":       "nowish",
 							"logerror": "non-string field key: 88",
-							"keyvals":  "keyvals redacted for test",
+							"keyvals":  "keyvals replaced for test",
 						}))
 					})
 				})
@@ -273,7 +297,7 @@ var _ = Describe("Sabot", func() {
 							"level":    "info",
 							"msg":      "a noteworthy occurrence",
 							"ts":       "nowish",
-							"keyvals":  "keyvals redacted for test",
+							"keyvals":  "keyvals replaced for test",
 							"logerror": "json: unsupported type: chan int",
 						}))
 					})
@@ -314,20 +338,20 @@ func delog(buf *bytes.Buffer) (logged Fields) {
 	Expect(loggedAt).To(BeTemporally("~", time.Now(), 9*time.Millisecond))
 	logged["ts"] = "nowish"
 
-	redact(&logged)
+	replace(logged)
 	return
 }
 
-func redact(asdf *Fields) {
+func replace(logged Fields) {
 
-	logged := *asdf
 	logerror, ok := logged["logerror"]
 	if ok {
 		logged["logerror"] = strings.Split(logerror.(string), "\n")[0]
 	}
+
 	logerror, ok = logged["keyvals"]
 	if ok {
-		logged["keyvals"] = "keyvals redacted for test"
+		logged["keyvals"] = "keyvals replaced for test"
 	}
 }
 
