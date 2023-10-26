@@ -1,2 +1,6 @@
 
-*.swp
+*secret*
+cover.out
+
+junk/
+bin/

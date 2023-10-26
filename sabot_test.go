@@ -325,6 +325,7 @@ var _ = Describe("Sabot", func() {
 
 func delog(buf *bytes.Buffer) (logged Fields) {
 
+	// Todo: combine efforts with other log testing stuffs
 	// marshal logged data to map
 
 	logged = Fields{}
@@ -349,7 +350,7 @@ func replace(logged Fields) {
 		logged["logerror"] = strings.Split(logerror.(string), "\n")[0]
 	}
 
-	logerror, ok = logged["keyvals"]
+	_, ok = logged["keyvals"]
 	if ok {
 		logged["keyvals"] = "keyvals replaced for test"
 	}
