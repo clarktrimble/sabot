@@ -1,4 +1,4 @@
-// Package sabot implements context logging with json output
+// Package sabot implements contextual logging with json output.
 package sabot
 
 import (
@@ -12,42 +12,42 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Fields are key value pairs
+// Fields are key-value pairs.
 type Fields map[string]any
 
-// LogKey is a unique to this package key for use with context Value
+// LogKey is a unique to this package key for use with context Value.
 type LogKey struct{}
 
-// Sabot is a structured logger
+// Sabot is a structured logger.
 type Sabot struct {
-	// Writer is where output is written
+	// Writer is where output is written.
 	Writer io.Writer
-	// AltWriter is where output is written when Writer.Write returns an error
+	// AltWriter is where output is written when Writer.Write returns an error.
 	AltWriter io.Writer
-	// MaxLen is the length at which string field values are truncated
+	// MaxLen is the length at which string field values are truncated.
 	MaxLen int
 }
 
-// Info logs info level events
+// Info logs info level events.
 func (sabot *Sabot) Info(ctx context.Context, msg string, kv ...any) {
 
 	sabot.log(ctx, "info", msg, kv)
 }
 
-// Error logs error level events
+// Error logs error level events.
 func (sabot *Sabot) Error(ctx context.Context, msg string, err error, kv ...any) {
 
 	kv = append(kv, "error", fmt.Sprintf("%+v", err))
 	sabot.log(ctx, "error", msg, kv)
 }
 
-// WithFields adds log fields to a given context
+// WithFields adds log fields to a given context.
 func (sabot *Sabot) WithFields(ctx context.Context, kv ...any) context.Context {
 
 	return withFields(ctx, kv)
 }
 
-// GetFields gets log fields from a given context
+// GetFields gets log fields from a given context.
 func (sabot *Sabot) GetFields(ctx context.Context) Fields {
 
 	return getFields(ctx)

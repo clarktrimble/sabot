@@ -21,6 +21,18 @@ or
 After positional, any additional parameters are interpreted as key-value pairs to be included in the message.
 The approach works well in practice and logging statements can contribute to more readable code!
 
+[slog](https://go.dev/blog/slog) is now a thing in the standard library!
+Cool to see the same signature for lgr.Info here as [lgr.InfoContext](https://pkg.go.dev/log/slog#Logger.InfoContext).
+After a quick read-thru, I'm left with the impression that sabot and slog, while sharing an approach to structured input, are differently focused.
+sabot aims to implement a small interface, simply.
+slog, as part of the stdlib, has a lot more water to carry.
+Notably, sabot accumulates key-values via context, where slog duplicates the log object.
+(Contextual logging seems to be left as an exercise for a handler in slog.)
+I'm curious to:
+ - compare contextual logging vs logger duplication
+ - try implementing an slog handler using sabot
+ - try the slog's json handler in sabot
+
 ## Virtues of Contextual Logging
 
 It's nice to use context for .. ah, the context of the log message.  For example, if:
@@ -35,7 +47,7 @@ Json is implemented here and I'm interested in adding lightweight OpenTelemetry.
 
 ## Best Effort
 
-You don't want to tell your boss that the customer had an outage because of a logging issue.
+Sabot will do it's best to emit something, but the priority is to stay out of the way and, where unavoidable, fail gracefully.
 
 ### Truncation
 
@@ -73,13 +85,15 @@ Logging what you need when you're troubleshooting in prod may take a few passes.
 
 ## Golang (Anti) Idioms
 
-I feel well at home in the Golang community, but I might be a touch rouge with:
+I dig the Golang community, but I might be a touch rouge with:
 
   - multi-char variable names
   - named return parameters
+  - only cap first letter of acronyms
+  - liberal use of vertical space
   - BDD/DSL testing
 
-In the name of readability, which of course, tends towards the subjective.
+All in the name of readability, which of course, tends towards the subjective.
 
 ## Concurrent Use
 
