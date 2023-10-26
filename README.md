@@ -1,13 +1,13 @@
 
 # Sabot
 
-Contextual Logging for your Golang
+Structured Contextual Logging for Golang
 
 ![sabot-sketch-small](https://user-images.githubusercontent.com/5055161/236526017-ab7fa549-2230-4088-a22e-aee58f586af7.png)
 
 ## Why?
 
-Why yet another Golang module for logging?  Mostly for svelte invokation:
+Why yet another Golang module for logging?  Mostly for svelte invocation:
 
     lgr.Info(request.Context(), "sending response",
       "status", response.Status,
@@ -16,36 +16,50 @@ Why yet another Golang module for logging?  Mostly for svelte invokation:
       "elapsed", time.Since(start),
     )
 
-or
+Or
 
     lgr.Error(ctx, "request logger failed to get body", err)
 
 After positional, any additional parameters are interpreted as key-value pairs to be included in the message.
 The approach works well in practice and logging statements can contribute to more readable code!
 
+Additional features elaborated below! :)
+
 [slog](https://go.dev/blog/slog) is now a thing in the standard library!
 Cool to see the same signature for lgr.Info here as [lgr.InfoContext](https://pkg.go.dev/log/slog#Logger.InfoContext).
 After a quick read-thru, I'm left with the impression that sabot and slog, while sharing an approach to structured input, are differently focused.
 sabot aims to implement a small interface, simply.
-slog, as part of the stdlib, has a lot more water to carry.
-Notably, sabot accumulates key-values via context, where slog duplicates the log object.
+slog, as part of the standard library, has a lot more water to carry and views to consider.
+Notably, sabot accumulates key-values via context, where slog wants to duplicate the log object.
 (Contextual logging seems to be left as an exercise for a handler in slog.)
-I'm curious to:
- - compare contextual logging vs logger duplication
- - try implementing an slog handler using sabot
- - try the slog's json handler in sabot
+I'm curious to try the slog's json handler in sabot.
+
 
 ## Virtues of Contextual Logging
 
-It's nice to use context for .. ah, the context of the log message.  For example, if:
+It's nice to use context for .. ahh, the context of the log message.  For example, if:
 
     ctx = logger.WithFields(ctx, "request_id", rg.String(7))
 
-preceded the above calls, then the `request_id` can be included!  This can be very handy indeed when the time comes to pivot in Kibana, etc.
+Preceded the above calls, then the `request_id` can be included!  This can be very handy indeed when the time comes to pivot in Kibana, etc.
+
+Accumulating log fields via context is more flexible than in a duplicated logger object.
+Say for example, you want to log something about requests from an api's service layer and you'd like to include a request id.
+All this happens long after the service layer is instantiated with it's logger.
+See:
+
+ - https://github.com/clarktrimble/pbs/blob/main/cmd/api/main.go#L63
+ - https://github.com/clarktrimble/pbs/blob/main/photosvc/photosvc.go#L45
+ - https://github.com/clarktrimble/delish/blob/main/respond.go#L26
+
+For concrete example.
+
+When I first began using the approach, I _was_ a little troubled by the need to pass in context to a function that logs.
+In practice it's never been a problem and usually I find handling an error and other loggable situations can be kept toward the top of the stack.
 
 ## Structured Output
 
-Json is implemented here and I'm interested in adding lightweight OpenTelemetry.
+Json is implemented here and I'm interested in adding a lightweight approach OpenTelemetry.
 
 ## Best Effort
 
@@ -80,7 +94,7 @@ Opinions vary widely, and:
 
 <https://dave.cheney.net/2015/11/05/lets-talk-about-logging>
 
-offer some interesting perspectives.  A pull request for Debug will be most welcome!
+Offer some interesting perspectives.  A pull request for Debug will be most welcome!
 
 ## The Art of Logging
 
@@ -102,8 +116,6 @@ All in the name of readability, which of course, tends towards the subjective.
 
 I'm under the impression that `copyFields` in `withFields` makes Sabot safe for concurrent use.
 I have used a similar approach to reliably log the noteworthy events of many http requests.
-
-Todo: put a ticket for testing concurrent use, perhaps with fuzz!
 
 ## License
 
