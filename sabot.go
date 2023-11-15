@@ -64,6 +64,8 @@ const (
 
 func (sabot *Sabot) log(ctx context.Context, level, msg string, kv []any) {
 
+	now := time.Now().UTC()
+
 	ctxFields := sabot.GetFields(ctx)
 	fields := newFields(kv)
 
@@ -75,7 +77,7 @@ func (sabot *Sabot) log(ctx context.Context, level, msg string, kv []any) {
 
 	fields["msg"] = msg
 	fields["level"] = level
-	fields["ts"] = time.Now()
+	fields["ts"] = now
 
 	fields.truncate(sabot.MaxLen)
 
