@@ -12,8 +12,27 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	logErrorKey      string = "logerror"
+	truncationNotice string = "--truncated--"
+)
+
 // Fields are key-value pairs.
 type Fields map[string]any
+
+// Config is the configurable fields of Sabot.
+type Config struct {
+	MaxLen int `json:"max_len" desc:"maximum length that will be logged for any field"`
+}
+
+// New creates a Sabot from Config.
+func (cfg *Config) New(writer io.Writer) *Sabot {
+
+	return &Sabot{
+		MaxLen: cfg.MaxLen,
+		Writer: writer,
+	}
+}
 
 // LogKey is a unique to this package key for use with context Value.
 type LogKey struct{}
@@ -56,11 +75,6 @@ func (sabot *Sabot) GetFields(ctx context.Context) Fields {
 //
 // unexported
 //
-
-const (
-	logErrorKey      string = "logerror"
-	truncationNotice string = "--truncated--"
-)
 
 func (sabot *Sabot) log(ctx context.Context, level, msg string, kv []any) {
 
@@ -192,6 +206,9 @@ func copyFields(ctx context.Context) Fields {
 }
 
 func (fields Fields) truncate(max int) {
+
+	// Todo: prolly don't want just add notice yeah?
+	// Todo: and while you're up, git rid of alt writer?
 
 	max -= len(truncationNotice)
 	if max < 1 {

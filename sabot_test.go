@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -22,16 +23,42 @@ func TestSabot(t *testing.T) {
 
 var _ = Describe("Sabot", func() {
 
+	var (
+		ctx context.Context
+		lgr *Sabot
+	)
+
+	Describe("creating a logger from config", func() {
+		var (
+			cfg *Config
+		)
+
+		JustBeforeEach(func() {
+			lgr = cfg.New(os.Stderr)
+		})
+
+		When("all is well", func() {
+			BeforeEach(func() {
+				cfg = &Config{
+					MaxLen: 99,
+				}
+			})
+
+			It("should setup the logger", func() {
+				Expect(lgr.MaxLen).To(Equal(99))
+				Expect(lgr.Writer).To(Equal(os.Stderr))
+			})
+		})
+	})
+
 	Describe("getting and storing fields", func() {
 		var (
-			ctx    context.Context
 			fields Fields
-			lgr    Sabot
 		)
 
 		BeforeEach(func() {
 			ctx = context.Background()
-			lgr = Sabot{
+			lgr = &Sabot{
 				MaxLen: 0,
 			}
 		})
@@ -99,16 +126,14 @@ var _ = Describe("Sabot", func() {
 		Describe("logging an event", func() {
 			var (
 				buf *bytes.Buffer
-				ctx context.Context
 				msg string
 				err error
 				kv  []any
-				lgr Sabot
 			)
 
 			BeforeEach(func() {
 				buf = &bytes.Buffer{}
-				lgr = Sabot{
+				lgr = &Sabot{
 					Writer: buf,
 					MaxLen: 0,
 				}
@@ -326,6 +351,7 @@ var _ = Describe("Sabot", func() {
 func delog(buf *bytes.Buffer) (logged Fields) {
 
 	// Todo: combine efforts with other log testing stuffs
+
 	// marshal logged data to map
 
 	logged = Fields{}
