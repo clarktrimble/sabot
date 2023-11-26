@@ -57,7 +57,7 @@ After a quick read-thru, I'm left with the impression that sabot and slog, while
 `slog`, as part of the standard library, has a lot more water to carry and views to consider.
 Notably, sabot accumulates key-values via context, where slog wants to duplicate the logger object.
 (Contextual logging looks to be left as an exercise for a handler in slog.)
-I am curious to try the slog's json handler in sabot.
+I _am_ curious to try the slog's json handler in sabot.
 
 
 ## Virtues of Contextual Logging
@@ -95,7 +95,7 @@ In practice it's never been a problem and usually I find handling an error and o
 
 ## Structured Output
 
-Json is implemented here and I'm interested in adding a lightweight approach OpenTelemetry.
+Json is implemented here and I'm interested in adding a lightweight approach to OpenTelemetry.
 
 ## Best Effort
 
