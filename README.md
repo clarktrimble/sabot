@@ -7,32 +7,56 @@ Structured Contextual Logging for Golang
 
 ## Why?
 
-Why yet another Golang module for logging?  Mostly for svelte invocation:
+Why yet another Golang module for logging?  Svelte invocation for a start:
 
-    lgr.Info(request.Context(), "sending response",
-      "status", response.Status,
-      "headers", response.Header(),
-      "body", body,
-      "elapsed", time.Since(start),
-    )
+```go
+  lgr := cfg.Logger.New(os.Stderr)
+  ctx := lgr.WithFields(context.Background(), "run_id", "123123123")
 
-Or
+  lgr.Info(ctx, "logloglog starting", "config", cfg)
+  lgr.Error(ctx, "failed to, you know ..", errors.Errorf("oops"))
+```
 
-    lgr.Error(ctx, "request logger failed to get body", err)
+(from examples/logloglog)
 
 After positional, any additional parameters are interpreted as key-value pairs to be included in the message.
 The approach works well in practice and logging statements can contribute to more readable code!
+
+Let's have a look at the output:
+
+```bash
+$ bin/logloglog 2>&1 | jq --slurp
+```
+
+```json
+[
+  {
+    "config": "{\"version\":\"config.11.8a5e577\",\"logger\":{\"max_len\":99}}",
+    "level": "info",
+    "msg": "logloglog starting",
+    "run_id": "123123123",
+    "ts": "2023-11-25T21:20:54.758434441Z"
+  },
+  {
+    "error": "oops\nmain.main\n\t/home/trimble/proj/sabot/examples/logloglog/main.go:38\nruntime.main\n\t/--truncated--",
+    "level": "error",
+    "msg": "failed to, you know ..",
+    "run_id": "123123123",
+    "ts": "2023-11-25T21:20:54.758722223Z"
+  }
+]
+```
 
 Additional features elaborated below! :)
 
 [slog](https://go.dev/blog/slog) is now a thing in the standard library!
 Cool to see the same signature for lgr.Info here as [lgr.InfoContext](https://pkg.go.dev/log/slog#Logger.InfoContext).
 After a quick read-thru, I'm left with the impression that sabot and slog, while sharing an approach to structured input, are differently focused.
-sabot aims to implement a small interface, simply.
-slog, as part of the standard library, has a lot more water to carry and views to consider.
-Notably, sabot accumulates key-values via context, where slog wants to duplicate the log object.
-(Contextual logging seems to be left as an exercise for a handler in slog.)
-I'm curious to try the slog's json handler in sabot.
+`sabot` aims to implement a small interface, simply.
+`slog`, as part of the standard library, has a lot more water to carry and views to consider.
+Notably, sabot accumulates key-values via context, where slog wants to duplicate the logger object.
+(Contextual logging looks to be left as an exercise for a handler in slog.)
+I am curious to try the slog's json handler in sabot.
 
 
 ## Virtues of Contextual Logging
@@ -46,15 +70,24 @@ Preceded the above calls, then the `request_id` can be included!  This can be ve
 Accumulating log fields via context is more flexible than in a duplicated logger object.
 Say for example, you want to log something about requests from an api's service layer and you'd like to include a request id.
 All this happens long after the service layer is instantiated with it's logger.
-See:
 
- - https://github.com/clarktrimble/pbs/blob/main/cmd/api/main.go#L63
- - https://github.com/clarktrimble/pbs/blob/main/photosvc/photosvc.go#L45
- - https://github.com/clarktrimble/delish/blob/main/respond.go#L26
+For example:
 
-For concrete example.
+```go
+func (rp *Respond) NotOk(ctx context.Context, code int, err error) {
 
-When I first began using the approach, I _was_ a little troubled by the need to pass in context to a function that logs.
+  header(rp.Writer, code)
+
+  rp.Logger.Error(ctx, "returning error to client", err)
+  rp.WriteObjects(ctx, map[string]any{"error": fmt.Sprintf("%v", err)})
+}
+```
+
+In the helper shown, `Logger` comes to us from the service-layer, which is created on startup.
+`ctx`, which is created much later with the request, carries `request_id` thanks to a middleware.
+And the request itself will have been logged with the same id, allowing for correlation.
+
+When I first began using a contextual approach, I _was_ a little troubled by the need to pass in context to every function that logs.
 In practice it's never been a problem and usually I find handling an error and other loggable situations can be kept toward the top of the stack.
 
 ## Structured Output
@@ -75,6 +108,16 @@ Simply truncating when things get out of hand strikes a nice balance:
 ## Unoptimized
 
 Yet!
+
+Really though, sabot is not likely to turn into a high performance logging solution.
+It's focused on readability in the code and producing logs for efficient troubleshooting of system issues. 
+
+## Transport Free
+
+Sabot takes an `io.Writer`.
+I usually go with `os.Stderr` with the idea that container infrastructure will take it from there.
+
+Where transport is needed to get logs over to ingestion, I've had very good luck with [github.com/fatih/pool](https://github.com/fatih/pool).
 
 ## Small Public Interface
 
@@ -98,14 +141,22 @@ Offer some interesting perspectives.  A pull request for Debug will be most welc
 
 ## The Art of Logging
 
-Logging what you need when you're troubleshooting in prod may take a few passes.  Not too cold and not too hot.
+Logging what you need when you're troubleshooting may take a few passes.
+Not too cold and not too hot.
+
+I like an iterative approach:
+ - log some stuff as reasonable in dev
+ - add, remove, and edit logging statements in lab
+ - fine tune as necessary in prod
+
+Devops ftw! :)
 
 ## Golang (Anti) Idioms
 
 I dig the Golang community, but I might be a touch rouge with:
 
   - multi-char variable names
-  - named return parameters
+  - named return parameters (unless awkward)
   - only cap first letter of acronyms
   - liberal use of vertical space
   - BDD/DSL testing
