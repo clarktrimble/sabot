@@ -52,6 +52,7 @@ Additional features elaborated below! :)
 [slog](https://go.dev/blog/slog) is now a thing in the standard library!
 Cool to see the same signature for lgr.Info here as [lgr.InfoContext](https://pkg.go.dev/log/slog#Logger.InfoContext).
 After a quick read-thru, I'm left with the impression that sabot and slog, while sharing an approach to structured input, are differently focused.
+
 `sabot` aims to implement a small interface, simply.
 `slog`, as part of the standard library, has a lot more water to carry and views to consider.
 Notably, sabot accumulates key-values via context, where slog wants to duplicate the logger object.
@@ -65,13 +66,15 @@ It's nice to use context for .. ahh, the context of the log message.  For exampl
 
     ctx = logger.WithFields(ctx, "request_id", rg.String(7))
 
-Preceded the above calls, then the `request_id` can be included!  This can be very handy indeed when the time comes to pivot in Kibana, etc.
+
+is added to a request's context in a middleware, `request_id` can be included in any subsequent logs relating to it.
+This can be very handy indeed when the time comes to pivot in Kibana, etc.
 
 Accumulating log fields via context is more flexible than in a duplicated logger object.
-Say for example, you want to log something about requests from an api's service layer and you'd like to include a request id.
+Say for example, you want to log something about requests from an api's service layer.
 All this happens long after the service layer is instantiated with it's logger.
 
-For example:
+For example: (from [respond.go](https://github.com/clarktrimble/delish/blob/main/respond.go#L26))
 
 ```go
 func (rp *Respond) NotOk(ctx context.Context, code int, err error) {
@@ -83,9 +86,9 @@ func (rp *Respond) NotOk(ctx context.Context, code int, err error) {
 }
 ```
 
-In the helper shown, `Logger` comes to us from the service-layer, which is created on startup.
+In the helper shown, `Logger` comes to us from a service-layer, created on startup.
 `ctx`, which is created much later with the request, carries `request_id` thanks to a middleware.
-And the request itself will have been logged with the same id, allowing for correlation.
+A-and the request itself will have been logged with the same id, allowing for correlation :)
 
 When I first began using a contextual approach, I _was_ a little troubled by the need to pass in context to every function that logs.
 In practice it's never been a problem and usually I find handling an error and other loggable situations can be kept toward the top of the stack.
