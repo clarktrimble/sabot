@@ -207,8 +207,7 @@ func copyFields(ctx context.Context) Fields {
 
 func (fields Fields) truncate(max int) {
 
-	// Todo: prolly don't want just add notice yeah?
-	// Todo: and while you're up, git rid of alt writer?
+	// account for notice length in truncation result
 
 	max -= len(truncationNotice)
 	if max < 1 {

@@ -266,7 +266,7 @@ var _ = Describe("Sabot", func() {
 				When("ctx fields and kv fields overlap each other and boilerplate", func() {
 					BeforeEach(func() {
 						ctx = lgr.WithFields(ctx, "app_id", "testo", "level", "warn21")
-						kv = []any{"foo", "bar", "app_id", "producto", "level", "warn22"}
+						kv = []any{"foo", "bar", "app_id", "producto", "level", "warn22"} //nolint: misspell
 					})
 
 					It("should write the message, level, ts, and fields", func() {
@@ -350,18 +350,16 @@ var _ = Describe("Sabot", func() {
 
 func delog(buf *bytes.Buffer) (logged Fields) {
 
-	// Todo: combine efforts with other log testing stuffs
-
 	// marshal logged data to map
 
 	logged = Fields{}
 	err := json.Unmarshal(buf.Bytes(), &logged)
-	Expect(err).To(BeNil())
+	Expect(err).ToNot(HaveOccurred())
 
 	// check time here and rewrite for testability
 
 	loggedAt, err := time.Parse(time.RFC3339, logged["ts"].(string))
-	Expect(err).To(BeNil())
+	Expect(err).ToNot(HaveOccurred())
 	Expect(loggedAt).To(BeTemporally("~", time.Now(), 9*time.Millisecond))
 	logged["ts"] = "nowish"
 
@@ -373,7 +371,7 @@ func replace(logged Fields) {
 
 	logerror, ok := logged["logerror"]
 	if ok {
-		logged["logerror"] = strings.Split(logerror.(string), "\n")[0]
+		logged["logerror"] = strings.Split(logerror.(string), "\n")[0] //nolint: forcetypeassert
 	}
 
 	_, ok = logged["keyvals"]
