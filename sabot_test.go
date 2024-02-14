@@ -1,4 +1,4 @@
-package sabot_test
+package sabot
 
 import (
 	"bytes"
@@ -12,8 +12,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	. "github.com/clarktrimble/sabot"
 )
 
 func TestSabot(t *testing.T) {
