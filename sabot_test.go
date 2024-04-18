@@ -162,6 +162,58 @@ var _ = Describe("Sabot", func() {
 				})
 			})
 
+			Context("at debug level", func() {
+
+				JustBeforeEach(func() {
+					lgr.Debug(ctx, msg, kv...)
+				})
+
+				When("debug is enabled", func() {
+					BeforeEach(func() {
+						lgr.EnableDebug = true
+					})
+					It("should write the message, level, and ts", func() {
+						Expect(delog(buf)).To(Equal(Fields{
+							"level": "debug",
+							"msg":   "a noteworthy occurrence",
+							"ts":    "nowish",
+						}))
+					})
+				})
+
+				When("debug is not enabled", func() {
+					It("should skip", func() {
+						Expect(delog(buf)).To(BeEmpty())
+					})
+				})
+			})
+
+			Context("at trace level", func() {
+
+				JustBeforeEach(func() {
+					lgr.Trace(ctx, msg, kv...)
+				})
+
+				When("trace is enabled", func() {
+					BeforeEach(func() {
+						lgr.EnableTrace = true
+					})
+					It("should write the message, level, and ts", func() {
+						Expect(delog(buf)).To(Equal(Fields{
+							"level": "trace",
+							"msg":   "a noteworthy occurrence",
+							"ts":    "nowish",
+						}))
+					})
+				})
+
+				When("trace is not enabled", func() {
+					It("should skip", func() {
+						Expect(delog(buf)).To(BeEmpty())
+					})
+				})
+			})
+
 			Context("at info level", func() {
 
 				JustBeforeEach(func() {
@@ -347,6 +399,10 @@ var _ = Describe("Sabot", func() {
 })
 
 func delog(buf *bytes.Buffer) (logged Fields) {
+
+	if buf.Len() == 0 {
+		return
+	}
 
 	// marshal logged data to map
 

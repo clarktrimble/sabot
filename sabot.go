@@ -45,12 +45,36 @@ type Sabot struct {
 	AltWriter io.Writer
 	// MaxLen is the length at which string field values are truncated.
 	MaxLen int
+	// EnableDebug determines if debug events are logged.
+	EnableDebug bool
+	// EnableTrace determines if trace events are logged.
+	EnableTrace bool
 }
 
 // Info logs info level events.
 func (sabot *Sabot) Info(ctx context.Context, msg string, kv ...any) {
 
 	sabot.log(ctx, "info", msg, kv)
+}
+
+// Debug logs debug level events.
+func (sabot *Sabot) Debug(ctx context.Context, msg string, kv ...any) {
+
+	if !sabot.EnableDebug {
+		return
+	}
+
+	sabot.log(ctx, "debug", msg, kv)
+}
+
+// Trace logs trace level events.
+func (sabot *Sabot) Trace(ctx context.Context, msg string, kv ...any) {
+
+	if !sabot.EnableTrace {
+		return
+	}
+
+	sabot.log(ctx, "trace", msg, kv)
 }
 
 // Error logs error level events.
