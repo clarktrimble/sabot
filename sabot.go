@@ -22,15 +22,19 @@ type Fields map[string]any
 
 // Config is the configurable fields of Sabot.
 type Config struct {
-	MaxLen int `json:"max_len" desc:"maximum length that will be logged for any field"`
+	MaxLen      int  `json:"max_len" desc:"maximum length that will be logged for any field"`
+	EnableDebug bool `json:"enable_debug" desc:"log debug messages"`
+	EnableTrace bool `json:"enable_trace" desc:"log trace messages"`
 }
 
 // New creates a Sabot from Config.
 func (cfg *Config) New(writer io.Writer) *Sabot {
 
 	return &Sabot{
-		MaxLen: cfg.MaxLen,
-		Writer: writer,
+		MaxLen:      cfg.MaxLen,
+		EnableDebug: cfg.EnableDebug,
+		EnableTrace: cfg.EnableTrace,
+		Writer:      writer,
 	}
 }
 
