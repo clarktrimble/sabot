@@ -233,20 +233,20 @@ func copyFields(ctx context.Context) Fields {
 	return cp
 }
 
-func (fields Fields) truncate(max int) {
+func (fields Fields) truncate(maxLength int) {
 
 	// account for notice length in truncation result
 
-	max -= len(truncationNotice)
-	if max < 1 {
+	maxLength -= len(truncationNotice)
+	if maxLength < 1 {
 		return
 	}
 
 	for key, val := range fields {
 
 		str, ok := val.(string)
-		if ok && max < len(str) {
-			fields[key] = strings.Join([]string{str[:max], truncationNotice}, "")
+		if ok && maxLength < len(str) {
+			fields[key] = strings.Join([]string{str[:maxLength], truncationNotice}, "")
 		}
 	}
 }

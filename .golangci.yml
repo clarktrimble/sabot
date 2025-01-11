@@ -1,33 +1,35 @@
 ## ginked from https://github.com/pkg/json 1/15/23
-## 
+##
 ## agreeing with Mr. Cheney on disabled linters
 ## commented ones are mostly not generating hits
-## Todo: try out on more code and settle dust
-run:
-  go: '1.21'
+## Todo: how to best share b/t projects?
 
 linters:
   enable-all: true
   disable:
     - asasalint
     #- bodyclose
+    - canonicalheader ### why???
     - containedctx
     - contextcheck
     #- cyclop
-    - deadcode # replaced with unused
+    ###- deadcode # replaced with unused
     - depguard # too annoying
     #- dupl
     #- dupword
+    - err113
     #- errcheck
     #- errchkjson
     #- errname
     #- errorlint
-    - exhaustivestruct # Replaced by exhaustruct.
+    ###- exhaustivestruct # Replaced by exhaustruct.
     - exhaustruct
     - exhaustive # too annoying, too hard to disable with comments
+    - exportloopref ### suppress deprecation warning, bleh
+    - fatcontext ### want to be sarcastic, anyway should be ok in test
     #- forbidigo
     #- funlen
-    - gci # maybe want this, pct
+    - gci
     - gochecknoglobals
     #- gocognit
     #- goconst
@@ -35,34 +37,36 @@ linters:
     #- gocyclo
     - godot
     #- godox
-    - goerr113
+    ###- goerr113
     - gofumpt
-    - golint # Replaced by revive.
-    - gomnd
-    - ifshort
+    ###- golint # Replaced by revive.
+    ###- gomnd
+    ###- ifshort
     - inamedparam # too opinionated
-    - interfacer # deprecated
+    ###- interfacer # deprecated
     #- ireturn
     - lll
     #- maintidx
-    - maligned # Replaced by govet
+    ###- maligned # Replaced by govet
+    - mnd
     - musttag # flaky, fires on structs which aren't JSON marshalled
     - nakedret # pct
     #- nilnil
     - nlreturn
     #- noctx
     - nonamedreturns
-    - nosnakecase # Replaced by revive, pct
+    ###- nosnakecase # Replaced by revive, pct
     - paralleltest
+    - perfsprint ### more readable with fmt
     #- prealloc
-    - scopelint # Replaced by exportloopref.
-    - structcheck # replaced with unused
+    ###- scopelint # Replaced by exportloopref.
+    ###- structcheck # replaced with unused
     - tagliatelle
     - tagalign # too fussy
     - testpackage # too annoying
     #- thelper
     - usestdlibvars
-    - varcheck # Replaced by unused.
+    ###- varcheck # Replaced by unused.
     - varnamelen
     - whitespace
     - wrapcheck
