@@ -22,9 +22,9 @@ type Fields map[string]any
 
 // Config is the configurable fields of Sabot.
 type Config struct {
-	MaxLen      int  `json:"max_len" desc:"maximum length that will be logged for any field"`
-	EnableDebug bool `json:"enable_debug" desc:"log debug messages"`
-	EnableTrace bool `json:"enable_trace" desc:"log trace messages"`
+	MaxLen      int  `json:"max_len" default:"999" desc:"maximum length that will be logged for any field"`
+	EnableDebug bool `json:"enable_debug" default:"false" desc:"log debug messages"`
+	EnableTrace bool `json:"enable_trace" default:"false" desc:"log trace messages"`
 }
 
 // New creates a Sabot from Config.
