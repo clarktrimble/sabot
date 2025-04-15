@@ -100,6 +100,33 @@ func (sabot *Sabot) GetFields(ctx context.Context) Fields {
 	return getFields(ctx)
 }
 
+func (sabot *Sabot) SetLevel(ctx context.Context, level string) {
+	// Todo: unit!!
+
+	var enableDebug, enableTrace bool
+	switch level {
+	case "info":
+	case "debug":
+		enableDebug = true
+	case "trace":
+		enableDebug = true
+		enableTrace = true
+	default:
+		err := errors.Errorf(`unknown level: %s, want "info","debug", or "trace"`, level)
+		sabot.Error(ctx, "failed to set logging level", err)
+		return
+	}
+
+	sabot.EnableDebug = enableDebug
+	sabot.EnableTrace = enableTrace
+
+	sabot.Info(ctx, "set logging level",
+		"level", level,
+		"enableDebug", enableDebug,
+		"enableTrace", enableTrace,
+	)
+}
+
 //
 // unexported
 //
