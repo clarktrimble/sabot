@@ -36,7 +36,7 @@ linters:
     - gocritic
     #- gocyclo
     - godot
-    #- godox
+    - godox ### want todos today pct
     ###- goerr113
     - gofumpt
     ###- golint # Replaced by revive.

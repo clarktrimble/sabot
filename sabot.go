@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Todo: error when overwriting a field
+
 const (
 	logErrorKey      string = "logerror"
 	truncationNotice string = "--truncated--"
@@ -98,6 +100,18 @@ func (sabot *Sabot) WithFields(ctx context.Context, kv ...any) context.Context {
 func (sabot *Sabot) GetFields(ctx context.Context) Fields {
 
 	return getFields(ctx)
+}
+
+func (sabot *Sabot) GetLevel() string {
+
+	switch {
+	case sabot.EnableTrace:
+		return "trace"
+	case sabot.EnableDebug:
+		return "debug"
+	default:
+		return "info"
+	}
 }
 
 func (sabot *Sabot) SetLevel(ctx context.Context, level string) (err error) {
