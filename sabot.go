@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Todo: error when overwriting a field
+
 const (
 	logErrorKey      string = "logerror"
 	truncationNotice string = "--truncated--"
@@ -22,9 +24,9 @@ type Fields map[string]any
 
 // Config is the configurable fields of Sabot.
 type Config struct {
-	MaxLen      int  `json:"max_len" desc:"maximum length that will be logged for any field"`
-	EnableDebug bool `json:"enable_debug" desc:"log debug messages"`
-	EnableTrace bool `json:"enable_trace" desc:"log trace messages"`
+	MaxLen      int  `json:"max_len" default:"999" desc:"maximum length that will be logged for any field"`
+	EnableDebug bool `json:"enable_debug" default:"false" desc:"log debug messages"`
+	EnableTrace bool `json:"enable_trace" default:"false" desc:"log trace messages"`
 }
 
 // New creates a Sabot from Config.
@@ -98,6 +100,40 @@ func (sabot *Sabot) WithFields(ctx context.Context, kv ...any) context.Context {
 func (sabot *Sabot) GetFields(ctx context.Context) Fields {
 
 	return getFields(ctx)
+}
+
+func (sabot *Sabot) GetLevel() string {
+
+	switch {
+	case sabot.EnableTrace:
+		return "trace"
+	case sabot.EnableDebug:
+		return "debug"
+	default:
+		return "info"
+	}
+}
+
+func (sabot *Sabot) SetLevel(ctx context.Context, level string) (err error) {
+	// Todo: unit!!
+
+	var enableDebug, enableTrace bool
+	switch level {
+	case "info":
+	case "debug":
+		enableDebug = true
+	case "trace":
+		enableDebug = true
+		enableTrace = true
+	default:
+		err = errors.Errorf(`unknown level: %s, want "info","debug", or "trace"`, level)
+		return
+	}
+
+	sabot.EnableDebug = enableDebug
+	sabot.EnableTrace = enableTrace
+
+	return
 }
 
 //
