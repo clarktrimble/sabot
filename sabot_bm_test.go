@@ -1,7 +1,6 @@
 package sabot
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -31,7 +30,7 @@ func BenchmarkLog(b *testing.B) {
 		Writer: &nullWriter{},
 	}
 
-	ctx := lgr.WithFields(context.Background(), "app_id", "testo", "worker_id", "1234asdf")
+	ctx := lgr.WithFields(b.Context(), "app_id", "testo", "worker_id", "1234asdf")
 
 	tests := []struct {
 		name string
